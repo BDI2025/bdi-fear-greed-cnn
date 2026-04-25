@@ -137,11 +137,22 @@ hr {{ border-color:#444; }}
     min-height: 100px;
     box-shadow: 0 4px 16px rgba(0,0,0,.25);
 }}
-.bdi-header .logo-block {{ display:flex; flex-direction:column; gap:6px; }}
-.bdi-header .logo-svg {{ width: 150px; height: 56px; flex-shrink:0; }}
+.bdi-header .logo-block {{ display:flex; flex-direction:column; gap:8px; }}
+.bdi-header .logo-row {{
+    display:flex; align-items:center; gap:8px; line-height:1;
+}}
+.bdi-header .logo-bdi {{
+    font-family:'Playfair Display','Georgia','Times New Roman',serif;
+    font-weight:900; font-size:56px; color:white;
+    line-height:1; letter-spacing:-1px;
+}}
+.bdi-header .logo-arrow {{
+    color:white; font-size:48px; line-height:1;
+    margin-left:2px; transform:translateY(-2px);
+}}
 .bdi-header .tagline {{
-    font-family:'Poppins', sans-serif; font-size:10px;
-    letter-spacing:2.5px; color: rgba(255,255,255,.92);
+    font-family:'Poppins',sans-serif; font-size:10px;
+    letter-spacing:2.5px; color:rgba(255,255,255,.92);
     text-transform:uppercase; line-height:1;
 }}
 .bdi-header .title-block {{
@@ -168,28 +179,24 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] {{
 st.markdown(CSS, unsafe_allow_html=True)
 
 
-BDI_LOGO_SVG = """
-<svg class="logo-svg" viewBox="0 0 200 70" xmlns="http://www.w3.org/2000/svg">
-  <text x="0" y="58" font-family="Times New Roman, Georgia, serif" font-weight="bold"
-        font-size="68" fill="white" letter-spacing="-2">BDI</text>
-  <polygon points="138,18 138,58 180,38" fill="white"/>
-</svg>
-"""
-
 def bdi_header(title: str, subtitle: str):
-    """Renderiza la cabecera BDI con logo SVG fiel al brand."""
-    st.markdown(f"""
-    <div class="bdi-header">
-        <div class="logo-block">
-            {BDI_LOGO_SVG}
-            <div class="tagline">Consultora Patrimonial Integral</div>
-        </div>
-        <div class="title-block">
-            <div class="h1">{title}</div>
-            <div class="h2">{subtitle}</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    """Header BDI con logo recreado con CSS+texto (robusto, sin SVG inline)."""
+    html = (
+        '<div class="bdi-header">'
+          '<div class="logo-block">'
+            '<div class="logo-row">'
+              '<span class="logo-bdi">BDI</span>'
+              '<span class="logo-arrow">&#9654;</span>'
+            '</div>'
+            '<div class="tagline">Consultora Patrimonial Integral</div>'
+          '</div>'
+          '<div class="title-block">'
+            f'<div class="h1">{title}</div>'
+            f'<div class="h2">{subtitle}</div>'
+          '</div>'
+        '</div>'
+    )
+    st.markdown(html, unsafe_allow_html=True)
 
 # ==============================================================================
 # UTILIDADES
