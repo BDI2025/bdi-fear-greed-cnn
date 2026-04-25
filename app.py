@@ -62,7 +62,7 @@ st.set_page_config(
     page_title="BDI Fear & Greed Index — CNN Replica",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ---- Paleta BDI Consultora Patrimonial Integral ------------------------------
@@ -115,7 +115,9 @@ html, body, [class*="css"], .stApp {{
     font-family: 'Poppins', sans-serif !important;
 }}
 .stApp {{ background-color:{BG}; color:{TXT}; }}
-section[data-testid="stSidebar"] {{ background-color:{PANEL}; }}
+section[data-testid="stSidebar"] {{ display:none !important; }}
+[data-testid="collapsedControl"] {{ display:none !important; }}
+[data-testid="stSidebarCollapseButton"] {{ display:none !important; }}
 [data-testid="stMetricValue"] {{ color:{BRAND_LIME}; font-weight:700; }}
 [data-testid="stMetricLabel"] {{ color:{MUTED}; }}
 h1, h2, h3, h4 {{
@@ -571,27 +573,11 @@ def histogram_figure(series: pd.Series) -> go.Figure:
     return fig
 
 # ==============================================================================
-# SIDEBAR
+# DEFAULTS (sidebar removido — se hardcodea para ver el dashboard limpio)
 # ==============================================================================
-with st.sidebar:
-    st.markdown("## ⚙️ Controles")
-    years_back = st.slider("Histórico (años)", 1, 8, 4)
-    show_cnn = st.checkbox("Mostrar referencia CNN F&G", value=True)
-    show_components_table = st.checkbox("Tabla de componentes", value=True)
-    st.markdown("---")
-    st.markdown(
-        f"<span class='small-muted'>Fuente: Yahoo Finance + CNN.<br>"
-        f"Actualización: cada 30 min (cache).</span>",
-        unsafe_allow_html=True,
-    )
-    st.markdown("---")
-    st.markdown("### Recomendación de uso")
-    st.markdown(
-        "<span class='small-muted'>El índice es una <b>ayuda contraria</b>: "
-        "valores extremos suelen anticipar reversiones, no continuaciones. "
-        "No es señal de trading aislada.</span>",
-        unsafe_allow_html=True,
-    )
+years_back = 4
+show_cnn = True
+show_components_table = True
 
 # ==============================================================================
 # CARGA Y CÁLCULO
@@ -606,10 +592,8 @@ if data.empty:
     st.error("No se pudieron descargar datos de Yahoo Finance. Probá nuevamente en unos minutos.")
     st.stop()
 
-if failed:
-    with st.sidebar.expander("⚠️ Tickers con fallo (con fallback aplicado)"):
-        for n, t in failed:
-            st.text(f"• {n} ({t})")
+# Tickers con fallo: silenciados (sidebar oculto). Los fallbacks se aplican
+# automáticamente abajo y el usuario no necesita verlos en el dashboard.
 
 data = apply_fallbacks(data)
 
