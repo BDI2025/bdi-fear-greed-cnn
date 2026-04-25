@@ -130,33 +130,31 @@ hr {{ border-color:#444; }}
 .tag-neutral {{ color:{YELLOW}; font-weight:700; }}
 .small-muted {{ color:{MUTED}; font-size:12px; font-family:'Poppins',sans-serif; }}
 .bdi-header {{
-    display:flex; align-items:center; gap:18px;
-    padding:14px 20px; border-radius:10px;
+    display:flex; align-items:center; gap:28px;
+    padding:28px 32px; border-radius:12px;
     background: linear-gradient(135deg, {BRAND_GREEN} 0%, {BRAND_TURQ} 60%, {BRAND_LIME} 100%);
-    margin-bottom: 18px;
+    margin-bottom: 28px;
+    min-height: 100px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
 }}
-.bdi-header .logo {{
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 42px;
-    color: white;
-    letter-spacing: 4px;
-    line-height: 1;
-}}
-.bdi-header .logo .arrow {{ color:white; margin-left:2px; }}
+.bdi-header .logo-block {{ display:flex; flex-direction:column; gap:6px; }}
+.bdi-header .logo-svg {{ width: 150px; height: 56px; flex-shrink:0; }}
 .bdi-header .tagline {{
-    font-family:'Poppins', sans-serif; font-size:11px;
-    letter-spacing:3px; color: rgba(255,255,255,.92);
-    text-transform:uppercase;
+    font-family:'Poppins', sans-serif; font-size:10px;
+    letter-spacing:2.5px; color: rgba(255,255,255,.92);
+    text-transform:uppercase; line-height:1;
 }}
 .bdi-header .title-block {{
     margin-left:auto; text-align:right; color:white;
+    display:flex; flex-direction:column; gap:6px;
 }}
 .bdi-header .title-block .h1 {{
-    font-family:'Bebas Neue', sans-serif; font-size:28px; letter-spacing:2px;
+    font-family:'Bebas Neue', sans-serif; font-size:34px; letter-spacing:2px;
+    line-height:1.05;
 }}
 .bdi-header .title-block .h2 {{
     font-family:'Poppins', sans-serif; font-size:11px; letter-spacing:2px;
-    text-transform:uppercase; opacity:.92;
+    text-transform:uppercase; opacity:.92; line-height:1;
 }}
 div[data-baseweb="tab-list"] button[role="tab"] {{
     color: {MUTED} !important;
@@ -170,12 +168,20 @@ div[data-baseweb="tab-list"] button[aria-selected="true"] {{
 st.markdown(CSS, unsafe_allow_html=True)
 
 
+BDI_LOGO_SVG = """
+<svg class="logo-svg" viewBox="0 0 200 70" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="58" font-family="Times New Roman, Georgia, serif" font-weight="bold"
+        font-size="68" fill="white" letter-spacing="-2">BDI</text>
+  <polygon points="138,18 138,58 180,38" fill="white"/>
+</svg>
+"""
+
 def bdi_header(title: str, subtitle: str):
-    """Renderiza la cabecera BDI con logo recreado en HTML."""
+    """Renderiza la cabecera BDI con logo SVG fiel al brand."""
     st.markdown(f"""
     <div class="bdi-header">
-        <div>
-            <div class="logo">BDI<span class="arrow">▶</span></div>
+        <div class="logo-block">
+            {BDI_LOGO_SVG}
             <div class="tagline">Consultora Patrimonial Integral</div>
         </div>
         <div class="title-block">
@@ -400,10 +406,13 @@ def composite_index(components: pd.DataFrame, weights: dict) -> pd.Series:
 # VISUALES (Plotly)
 # ==============================================================================
 def gauge_figure(value: float, cnn_value=None) -> go.Figure:
+    """Gauge con número, etiqueta de régimen separada (debajo del gauge),
+    y referencia opcional CNN. Sin overlap entre número y etiqueta."""
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=value,
-        number=dict(font=dict(size=58, color=GOLD)),
+        number=dict(font=dict(size=54, color=GOLD), valueformat=".1f"),
+        domain=dict(x=[0, 1], y=[0.30, 1.0]),  # gauge ocupa 70% superior
         gauge=dict(
             axis=dict(range=[0, 100], tickwidth=1, tickcolor=MUTED,
                       tickvals=[0, 25, 45, 55, 75, 100],
@@ -420,20 +429,21 @@ def gauge_figure(value: float, cnn_value=None) -> go.Figure:
             threshold=dict(line=dict(color=TXT, width=4), thickness=0.85, value=value),
         ),
     ))
+    # etiqueta de régimen DEBAJO del gauge (sin solapar el número)
     annotations = [dict(
-        x=0.5, y=0.05, xref="paper", yref="paper",
+        x=0.5, y=0.08, xref="paper", yref="paper",
         text=f"<b>{status_label(value).upper()}</b>",
-        showarrow=False, font=dict(color=GOLD, size=18),
+        showarrow=False, font=dict(color=GOLD, size=20),
     )]
     if cnn_value is not None:
         annotations.append(dict(
-            x=0.5, y=-0.05, xref="paper", yref="paper",
+            x=0.5, y=-0.02, xref="paper", yref="paper",
             text=f"<span style='color:{MUTED}'>CNN F&G hoy: {cnn_value:.0f}</span>",
             showarrow=False, font=dict(size=12),
         ))
     fig.update_layout(
         paper_bgcolor=PANEL, plot_bgcolor=PANEL, font=dict(color=TXT),
-        margin=dict(l=20, r=20, t=10, b=40), height=320,
+        margin=dict(l=20, r=20, t=20, b=60), height=380,
         annotations=annotations,
     )
     return fig
@@ -630,8 +640,8 @@ st.markdown("")
 # ==============================================================================
 # TABS
 # ==============================================================================
-tab_dashboard, tab_components, tab_education, tab_data = st.tabs(
-    ["🎯 Dashboard", "🧩 Componentes", "🎓 Educación", "📥 Datos"]
+tab_dashboard, tab_components, tab_theory, tab_math, tab_data = st.tabs(
+    ["🎯 Dashboard", "🧩 Componentes", "📖 Teoría", "🧮 Matemática avanzada", "📥 Datos"]
 )
 
 # ------------------------------- DASHBOARD ------------------------------------
@@ -712,139 +722,245 @@ with tab_components:
     corr = components.tail(252).corr().round(2)
     st.dataframe(corr, use_container_width=True)
 
-# ------------------------------- EDUCACIÓN ------------------------------------
-with tab_education:
-    st.markdown("## 🎓 Cómo se calcula y cómo se interpreta")
+# ------------------------------- TEORÍA SENCILLA ------------------------------
+with tab_theory:
+    st.markdown("## 📖 Teoría — para entender el índice sin matemática")
     st.markdown(
-        "El **BDI Fear & Greed Index** intenta capturar el sentimiento agregado "
-        "del mercado de acciones de EE.UU. en una sola cifra entre 0 y 100. "
-        "Está inspirado en el índice de CNN, con mejoras técnicas en la "
-        "construcción y normalización."
+        "El **BDI Fear & Greed Index** mide en una sola cifra entre 0 y 100 cuán "
+        "**asustado** o cuán **avaro** está el mercado. La idea es viejísima: "
+        "Warren Buffett la resumió en *“sé temeroso cuando otros son avaros, y "
+        "avaro cuando otros son temerosos”*. Este indicador convierte esa frase "
+        "en un número objetivo y reproducible."
+    )
+    st.markdown(
+        "Cuando el índice está **muy bajo (miedo extremo)**, históricamente es "
+        "un buen momento para **revisar oportunidades de compra**. Cuando está "
+        "**muy alto (codicia extrema)**, conviene **moderar la exposición**. "
+        "No es una bola de cristal, es un termómetro contrarian."
+    )
+
+    st.markdown("### Cómo leer el termómetro")
+    st.markdown("""
+    | Valor       | Estado            | Qué pensar                                              |
+    |-------------|-------------------|---------------------------------------------------------|
+    | **0 – 25**  | 🟥 Miedo Extremo  | El miedo cubre todo. Suelen aparecer oportunidades.     |
+    | 25 – 45     | 🟧 Miedo          | El mercado está vendedor, pero no hay capitulación aún. |
+    | 45 – 55     | 🟨 Neutral        | Sin sesgo claro.                                        |
+    | 55 – 75     | 🟩 Codicia        | Apetito de riesgo en alza. Vigilar exposición.          |
+    | **75 – 100**| 🟢 Codicia Extr.  | Euforia. Históricamente preludio de correcciones.       |
+    """)
+
+    st.markdown("### Los 7 componentes, en lenguaje simple")
+
+    st.markdown("**1. Momentum del S&P 500**")
+    st.markdown(
+        "¿Está el mercado subiendo con fuerza o cayendo? Si el S&P 500 está "
+        "muy por encima de su precio promedio de los últimos 6 meses, hay "
+        "**impulso alcista** (codicia). Si está por debajo, hay **debilidad** "
+        "(miedo). Es como medir la velocidad del auto: cuesta arriba o cuesta abajo."
+    )
+
+    st.markdown("**2. Fortaleza del precio (Stock Price Strength)**")
+    st.markdown(
+        "¿Estamos cerca de los máximos del año o nos venimos cayendo? Cuando el "
+        "índice general (NYSE) está rozando su máximo de 52 semanas, eso es "
+        "**fortaleza**. Cuando se aleja, el mercado está perdiendo músculo."
+    )
+
+    st.markdown("**3. Amplitud del mercado (Breadth)**")
+    st.markdown(
+        "¿Sube **todo** el mercado o solo un puñado de empresas grandes? "
+        "Comparamos el S&P 500 normal (ponderado por las gigantes como Apple, "
+        "Microsoft) contra una versión donde **todas las empresas pesan igual**. "
+        "Si las dos suben juntas, el rally es saludable. Si solo suben las "
+        "gigantes, hay **fragilidad** disfrazada de codicia."
+    )
+
+    st.markdown("**4. Demanda de cobertura (Put/Call proxy)**")
+    st.markdown(
+        "¿Cuánto pagan los inversores por *seguro de auto*? Cuando hay miedo, "
+        "todos quieren comprar **puts** (opciones de venta) para protegerse. "
+        "Esto se ve en la curva de volatilidad esperada (VIX vs VIX3M): si el "
+        "VIX corto está más alto que el de 3 meses, hay **pánico inmediato**."
+    )
+
+    st.markdown("**5. Volatilidad (VIX)**")
+    st.markdown(
+        "El **VIX** es el famoso “índice del miedo”. Mide cuánta variación "
+        "espera el mercado en el S&P 500 en los próximos 30 días. "
+        "Por debajo de 15 → mercado dormido. Entre 20 y 30 → estrés. "
+        "Arriba de 30 → **pánico**. Más alto, más miedo."
+    )
+
+    st.markdown("**6. Demanda de refugio (Safe Haven)**")
+    st.markdown(
+        "Cuando la gente se asusta, **mueve plata de acciones a bonos del "
+        "Tesoro de EE.UU. a 20 años (TLT)**. Comparamos lo que rindió SPY "
+        "(acciones) vs TLT (bonos) en los últimos 20 días. Si los bonos están "
+        "ganando, hay **flight-to-quality** = miedo."
+    )
+
+    st.markdown("**7. Apetito por bonos basura (Junk Bond Demand)**")
+    st.markdown(
+        "Los **bonos de alto rendimiento (HYG)** son los más arriesgados. "
+        "Cuando los inversores tienen confianza, los compran y suben. "
+        "Cuando se asustan, los venden y compran bonos de calidad (LQD). "
+        "El cociente HYG/LQD es un excelente termómetro de **apetito por riesgo**."
+    )
+
+    st.markdown("### Casos famosos donde funcionó")
+    st.markdown("""
+    - **Marzo 2020 (COVID):** el índice de CNN llegó a **2** (pánico absoluto).
+      Quienes compraron SPX en ese mínimo tuvieron +60% en 12 meses.
+    - **Octubre 2022:** lectura ~14 cerca del piso del bear market.
+      Inicio del rally 2023.
+    - **Enero 2018 / Diciembre 2021:** lecturas >75 (euforia). Ambas precedieron
+      correcciones de doble dígito.
+    """)
+
+    st.markdown("### Cómo NO usarlo")
+    st.markdown("""
+    - **No es señal de trading aislada.** Codicia 70 hoy no significa vender
+      mañana.
+    - **No reemplaza el análisis fundamental** (ganancias, valuación, macro).
+    - **Funciona mejor en extremos.** En zona 40–60 dice poco.
+    - **No predice fechas de pivote**, solo señala probabilidades elevadas.
+    """)
+
+# ------------------------------- MATEMÁTICA AVANZADA --------------------------
+with tab_math:
+    st.markdown("## 🧮 Matemática del índice + mejoras BDI sobre el original")
+    st.markdown(
+        "Esta sección documenta las **fórmulas exactas**, las decisiones de "
+        "modelado y las **diferencias técnicas con el índice original de CNN**. "
+        "Está pensada para auditoría profesional y reproducibilidad."
     )
 
     st.markdown("### 1) Pipeline general")
-    st.markdown("Para cada componente se aplica:")
+    st.markdown("Para cada uno de los 7 componentes se calcula:")
     st.latex(r"""
     Z_t \;=\; \frac{x_t - \mu_{t-252:t-1}}{\sigma_{t-252:t-1}}
-    """)
-    st.latex(r"""
-    \text{Score}_t \;=\; \frac{100}{1 + e^{-Z_t / k}} \quad (k=1.5)
+    \qquad
+    \text{Score}_t \;=\; \frac{100}{1 + e^{-Z_t / k}}
+    \quad (k=1.5)
     """)
     st.markdown(
-        "El Z-score elimina el sesgo de nivel (un VIX de 18 hoy no significa "
-        "lo mismo que un VIX de 18 en 2017). La sigmoide comprime los "
-        "extremos a [0, 100] sin truncar la información: un Z = +3 mapea a "
-        "≈ 88, no se pierde la cola."
+        "El **Z-score rolling 252d** elimina el sesgo de nivel: un VIX de 18 "
+        "en 2024 no significa lo mismo que un VIX de 18 en 2017, porque la "
+        "media y desvío del régimen actual son distintos."
+    )
+    st.markdown(
+        "La **sigmoide** comprime el Z a [0, 100] de manera suave: un Z = +2 "
+        "mapea a ≈ 79, un Z = +3 a ≈ 88. La cola se preserva (no se trunca "
+        "como sí lo hace un percentil rolling)."
     )
     st.latex(r"""
-    \text{BDI}_t \;=\; \sum_{i=1}^{7} w_i \cdot \text{Score}_i \quad
-    \text{con } w_i = \tfrac{1}{7}
+    \text{BDI}_t \;=\; \sum_{i=1}^{7} w_i \cdot \text{Score}_i^{(t)}
+    \quad \text{con } w_i = \tfrac{1}{7}
+    \qquad \text{(pesos iguales, transparente)}
     """)
-    st.markdown("Suavizado final con media móvil de 3 días para reducir ruido.")
+    st.markdown("Suavizado final con SMA-3 días para reducir ruido del Z diario.")
 
-    st.markdown("### 2) Los 7 componentes")
-    st.markdown("**a) Momentum del S&P500**")
+    st.markdown("### 2) Los 7 componentes — fórmulas exactas")
+
+    st.markdown("**a) Momentum S&P 500**")
     st.latex(r"x_t = \frac{P_t^{SPX}}{\overline{P^{SPX}}_{t-125:t}} - 1")
-    st.markdown(
-        "Mide qué tan por encima/debajo está el SPX de su promedio de 125 días "
-        "(≈ 6 meses). Replica la lógica de CNN: si el precio está holgadamente "
-        "sobre la media → codicia."
-    )
+    st.markdown("Distancia relativa del precio a su SMA-125 (≈ 6 meses).")
 
     st.markdown("**b) Stock Price Strength**")
-    st.latex(r"x_t = \frac{P_t^{NYA}}{\max(P^{NYA}_{t-252:t})}")
+    st.latex(r"x_t = \frac{P_t^{NYA}}{\max\big(P^{NYA}_{t-252:t}\big)}")
     st.markdown(
-        "Distancia al máximo de 52 semanas del NYSE Composite. "
-        "Mientras el ratio esté cerca de 1 hay fortaleza (codicia). "
-        "Cuando se aleja, el mercado pierde amplitud (miedo). "
-        "Es un proxy del 'New Highs vs New Lows' de CNN."
+        "Razón entre el precio actual y el máximo de 52 semanas del NYSE "
+        "Composite. Proxy del *New Highs/New Lows* original de CNN."
     )
 
     st.markdown("**c) Stock Price Breadth**")
     st.latex(r"x_t = \frac{P_t^{RSP}}{P_t^{SPY}}")
     st.markdown(
-        "RSP es el S&P500 equiponderado, SPY es el ponderado por capitalización. "
-        "Si las megacaps lideran y el resto del mercado se queda atrás, RSP/SPY "
-        "cae → breadth pobre → miedo subyacente. Es el caso típico de los "
-        "'rally de pocas grandes'."
+        "Cociente equal-weight (RSP) vs cap-weight (SPY). Detecta concentración "
+        "en megacaps (mercado frágil aunque suba el índice principal)."
     )
 
-    st.markdown("**d) Put/Call Ratio (proxy)**")
-    st.latex(r"x_t = \frac{VIX_t}{VIX3M_t} \quad \text{(invertido)}")
+    st.markdown("**d) Put/Call Ratio — proxy vía estructura de volatilidad**")
+    st.latex(r"x_t = \frac{VIX_t}{VIX3M_t} \quad \text{(Z invertido)}")
     st.markdown(
-        "El ratio entre VIX (1 mes) y VIX3M (3 meses) refleja la pendiente de la "
-        "estructura de plazos de la volatilidad. Cuando se invierte (VIX > VIX3M) "
-        "los traders pagan caro la cobertura corta → demanda urgente de puts → "
-        "miedo. Es un proxy más limpio que el PCR oficial, que ahora se cobra."
+        "Pendiente de la curva de plazos del VIX. Cuando se invierte "
+        "(VIX > VIX3M, contango → backwardation), los traders están pagando "
+        "caro la cobertura corta — pánico inminente."
     )
 
     st.markdown("**e) Market Volatility**")
-    st.latex(r"x_t = \frac{VIX_t}{\overline{VIX}_{t-50:t}} \quad \text{(invertido)}")
+    st.latex(r"x_t = \frac{VIX_t}{\overline{VIX}_{t-50:t}} \quad \text{(Z invertido)}")
     st.markdown(
-        "VIX en relación con su SMA-50. Si la volatilidad implícita explota "
-        "respecto del régimen reciente, el mercado entra en pánico. "
-        "Se invierte porque alto VIX = miedo."
+        "VIX nominal normalizado por su SMA-50. Captura *spikes* de "
+        "volatilidad relativos al régimen reciente."
     )
 
     st.markdown("**f) Safe Haven Demand**")
-    st.latex(r"x_t = r_{20}^{SPY} - r_{20}^{TLT}")
+    st.latex(r"x_t = r^{SPY}_{20d} - r^{TLT}_{20d}")
     st.markdown(
-        "Diferencia de retorno a 20 días entre acciones (SPY) y bonos largos "
-        "(TLT). Cuando los inversores buscan refugio, TLT supera a SPY → "
-        "diferencia negativa → miedo."
+        "Spread de retornos 20-día entre SPY y TLT. Captura rotaciones tácticas "
+        "hacia bonos largos del Tesoro."
     )
 
     st.markdown("**g) Junk Bond Demand**")
     st.latex(r"x_t = \frac{P_t^{HYG}}{P_t^{LQD}}")
     st.markdown(
-        "Ratio entre bonos high-yield (HYG) y bonos investment-grade (LQD). "
-        "Cuando los inversores apetecen riesgo, HYG outperforma → ratio sube → "
-        "codicia. Cuando huyen del crédito basura, ratio cae → miedo."
+        "Cociente high-yield (HYG) vs investment-grade (LQD). Indicador "
+        "limpio de apetito por riesgo en crédito."
     )
 
-    st.markdown("### 3) Tabla de interpretación")
+    st.markdown("### 3) Mejoras BDI vs CNN original")
     st.markdown("""
-    | Rango       | Etiqueta          | Lectura típica                                                 |
-    |-------------|-------------------|----------------------------------------------------------------|
-    | 0 – 25      | **Miedo Extremo** | Capitulación. Probabilidad alta de rebote técnico.             |
-    | 25 – 45     | Miedo             | Desconfianza. Mercado vendedor pero todavía no rendido.        |
-    | 45 – 55     | Neutral           | Sin sesgo claro.                                               |
-    | 55 – 75     | Codicia           | Riesgo en alza. Conviene revisar exposición.                   |
-    | 75 – 100    | **Codicia Extr.** | Euforia. Históricamente preludio de correcciones técnicas.     |
+    | Aspecto                  | CNN F&G original                          | **BDI mejora**                                                                  |
+    |--------------------------|-------------------------------------------|---------------------------------------------------------------------------------|
+    | **Normalización**        | Percentil rolling (trunca colas)          | **Z-score + sigmoide** (preserva extremos, magnitud diferenciable)              |
+    | **Calibración**          | Caja negra propietaria                    | **Open-source y reproducible** desde Yahoo Finance                              |
+    | **PCR oficial CBOE**     | Pago, no abierto                          | **Proxy VIX/VIX3M** (gratis, derivado de la curva de volatilidad)               |
+    | **Pesos**                | No publicados                             | **Pesos iguales (1/7)**, totalmente transparentes y auditables                  |
+    | **VIX mostrado**         | Mezcla con score                          | **VIX en valor real** (8–80), bandas de referencia explícitas                   |
+    | **Suavizado**            | No documentado                            | **SMA-3 días** sobre el composite, documentado                                  |
+    | **Drawdown vs máximo**   | Conteo NH/NL diario (requiere CRSP)       | **NYA / max(NYA, 252d)** — proxy estructural sólido                             |
+    | **Datos faltantes**      | Modelo cae si falta un input              | **Cadena de fallbacks** (SPX→SPY→QQQ; VIX estimado por vol realizada SPY)       |
     """)
 
-    st.markdown("### 4) Casos históricos")
+    st.markdown("### 4) Por qué cambiamos algo")
     st.markdown("""
-    - **Marzo 2020 (COVID-19):** el índice de CNN llegó a 2 (miedo extremo).
-      El SPX rebotó 60% en los 12 meses siguientes.
-    - **Octubre 2022:** lectura ~14 (miedo extremo) cerca del piso del bear
-      market. Inicio del rally 2023.
-    - **Diciembre 2023 / Enero 2024:** lecturas >75 (codicia extrema).
-      Corrección menor en abril 2024 pero mercado siguió alcista.
-    - **Conclusión:** la **señal contraria** funciona mejor en extremos
-      profundos. En zona 60-75 muchas veces el mercado sigue subiendo.
+    - **Sigmoide en vez de percentil:** un percentil rolling truncó todo a “0 o 100”
+      en COVID 2020 y bear 2022. La sigmoide hace que un Z = -3 sea claramente
+      más extremo que un Z = -1.5, no “los dos en el percentil 1”.
+    - **PCR proxy:** el PCR oficial del CBOE pasó a ser dataset pago. La
+      estructura VIX/VIX3M se obtiene gratis de Yahoo y captura la misma
+      intuición (demanda de cobertura corta).
+    - **Sin shift destructivo:** una versión anterior calibraba la última
+      lectura para que coincidiera con CNN del día sumando una constante a
+      toda la serie histórica. Eso deformaba el pasado. Aquí **CNN se muestra
+      al lado como referencia**, no contamina el cálculo.
+    - **Fallbacks robustos:** Yahoo Finance falla con frecuencia. Si SPX no
+      llega, usamos SPY. Si HYG no llega, JNK. Si VIX no llega, calculamos
+      volatilidad realizada 20d de SPY × √252. La app **nunca cae** por un
+      ticker.
     """)
 
-    st.markdown("### 5) Limitaciones")
+    st.markdown("### 5) Limitaciones honestas")
     st.markdown("""
-    - El índice **no incluye fundamentales** (PER, ganancias, macro). Es 100%
-      sentimiento técnico/de flujo.
-    - **Lookback fijo** (252 días): un régimen estructural nuevo (ej. tasas
-      altas persistentes) se incorpora con demora.
-    - El proxy de PCR vía VIX/VIX3M no captura cambios en flow de minoristas
-      ni 0DTE.
-    - Es **una herramienta de timing táctico**, no de asignación estratégica.
+    - **No incluye fundamentales** (P/E, EPS, macro). Sentimiento puro.
+    - **Lookback fijo de 252 días**: un régimen estructural nuevo (tasas altas
+      persistentes 2022+) tarda en incorporarse al Z.
+    - El proxy PCR vía VIX/VIX3M **no captura flujos de minoristas ni 0DTE**.
+    - Es herramienta de **timing táctico**, no de **asset allocation estratégico**.
     """)
 
-    st.markdown("### 6) Comparación con otros índices")
+    st.markdown("### 6) Comparación con otros índices de sentimiento")
     st.markdown("""
-    | Índice                         | Universo            | Componentes            | Frecuencia |
-    |--------------------------------|---------------------|------------------------|------------|
-    | **CNN F&G**                    | Acciones US         | 7 (oficial)            | Diaria     |
-    | **BDI (este)**                 | Acciones US         | 7 (proxies abiertos)   | Diaria     |
-    | **Alternative.me Crypto F&G**  | BTC                 | 5 (vol + dom + social) | Diaria     |
-    | **Citi Pánico/Euforia**        | Acciones US (multi) | 9 (más bonds + FX)     | Semanal    |
-    | **AAII Sentiment Survey**      | Inversores retail   | Encuesta directa       | Semanal    |
+    | Índice                         | Universo            | Componentes            | Frecuencia | Salida    |
+    |--------------------------------|---------------------|------------------------|------------|-----------|
+    | **CNN F&G** (referencia)       | Acciones US         | 7 (PCR pago)           | Diaria     | 0–100     |
+    | **BDI V1 (este)**              | Acciones US         | 7 (proxies abiertos)   | Diaria     | 0–100     |
+    | **BDI V2 — Pánico/Euforia**    | Acciones + Bonds + FX | 9                    | Diaria     | Z (-3..+3)|
+    | **Alternative.me Crypto F&G**  | BTC                 | 5 (vol + dom + social) | Diaria     | 0–100     |
+    | **Citi Pánico/Euforia**        | Acciones US         | 9 (no público)         | Semanal    | 0–1       |
+    | **AAII Sentiment Survey**      | Retail US           | Encuesta               | Semanal    | %Bull-Bear|
     """)
 
 # ------------------------------- DATOS ----------------------------------------
